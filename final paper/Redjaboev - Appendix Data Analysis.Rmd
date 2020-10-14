@@ -1,0 +1,545 @@
+---
+title: "Does a Female Relative in Authoritarian Family Improve Women's Outcomes?"
+author:
+- 'Khasan Redjaboev'
+date: '6 May 2020'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+header-includes:
+  - \preauthor{\centering\large}
+  - \predate{\centering\normalsize}
+  - \pretitle{\centering\Large\textbf}
+  - \usepackage{setspace}\onehalfspacing
+  - \usepackage{xcolor}
+  - \usepackage[shortlabels]{enumitem}
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r}
+setwd("/Users/khasan/Desktop/813 Multrivariate Stats/DE 5 - Final Project")
+library(foreign)
+library(xtable)
+library(dplyr)
+library(tidyr)
+
+fem_fam <- read.csv("fem_fam.csv") #Upload dataset
+
+names(fem_fam)[5:24] <- c(2000:2019)
+fem_fam[fem_fam == ".."] <- NA 
+fem_fam <- fem_fam[,-c(1,4,25)] #to examine and remove missing or faulty entries
+
+fem_fam_panel <- gather(fem_fam, year, value, -Country.Code, -Series.Name)
+fem_fam_panel <- spread(fem_fam_panel, Series.Name, value)
+
+names(fem_fam_panel)[3:58] <- c("agric_share", "attended_birth", "complete_rep", "female", "gdp_pc", "edu_gdp", "Islam", "labor_fem", "labor_male", "law_eq_pay", "law_eq_hire", "law_maternity", "illeg_child_marry", "law_dom_viol", "life_female", "life_exp", "risk_mat_mort", "mat_mort_WB", "mat_mort_nat", "infant_mort", "f_infant_mort", "neonatal_mort", "law_postnatal_job", "const_gen_ndisc", "f_samejob", "natural_res", "polity4", "post_com", "f_MPs", "f_unpaid_24h", "VAW_12month", "school1_f", "school1_m", "school2_f", "school2_m", "school3_f", "school3_m", "no_secular", "teenage_mat", "debt_service", "patriarchy", "unemp_adv_f", "unemp_adv_m", "unemp_basicF", "unemp_basicM", "unemp_2F", "unemp_2M", "unemp_ILO_f", "unemp_nat_f", "unemp_ILO_m", "unemp_nat_m", "unmet_contracep", "urban_pop", "f_own_sex", "f_decide3", "f_just_beat") 
+#to rename long variable names in CSV
+```
+
+Independent variable: "female" (the presence of a politicially active female family member in a ruling family). 
+
+Control variables are:\\ 
+-"gdp_pc" (lagged, GDP per capita in 2010 US$ dollars),\\ 
+- "agric_share" (Agriculture, forestry, and fishing, value added, % of GDP),\\ 
+- "urban_pop" (Urban population, % of total population),\\
+_ "debt_service" (Total debt service, % of GNI),\\
+- "edu_gdp" (The share of GDP spent on education),\\ 
+- "complete_rep" (Completeness in data reporting when compared to the estimated and nationall reported death rates per year. Higher completeness means better statistical capacity and transparency). 
+
+Interaction variables are:\\ 
+- "post_com" (post-communist recent legacy or active communist government gets 1, else 0),\\ 
+- "Islam" (if a country is majority Muslim it gets 1, else 0),\\ 
+- "natural_res" (if a country is natural resource reliant economy to sustain its regime it gets 1, else 0),\\
+- "no_secular" (if a country is not secular by constitution and privileges one type of religion over others it gets 1, else 0),\\
+- "patriarchy" (if a country is tradtionally patriarchal it gets 1, else 0),\\
+- "polity4" (if a country is democracy or full democracy it gets 1, else 0).\\ 
+
+Outcome variables are two-fold, categorized by Hypotheses 1 and 2. 
+
+For Hypothesis 1, legislation:\\
+- "law_eq_pay" (Law mandates equal remuneration for females and males for work of equal value; 1=yes, 0=no),\\ 
+- "law_eq_hire" (Law mandates nondiscrimination based on gender in hiring; 1=yes,  0=no),\\ 
+- "law_maternity" (Law mandates paid or unpaid maternity leave; 1=yes, 0=no),\\ 
+- "illeg_child_marry" (Law prohibits or invalidates child or early marriage; 1=yes 0=no), \\
+- "law_dom_viol" (Legislation exists on domestic violence; 1=yes, 0=no),\\ 
+- "law_postnatal_job" (Mothers are guaranteed an equivalent position after maternity leave; 1=yes, 0=no),\\ 
+- "const_gen_ndisc" (Nondiscrimination clause mentions gender in the constitution; 1=yes, 0=no).\\  
+
+For Hypothesis 2, policies:\\ 
+- "f_MPs" (Proportion of seats held by women in national parliaments in %),\\ 
+- "attended_birth" (Births attended by skilled health staff, % of total births),\\ 
+- "VAW_12month" (Proportion of women subjected to physical and/or sexual violence in the last 12 months as % of women age 15-49),\\ 
+- "labor_fem" (female laborforce participation),\\ 
+- "labor_male" (male laborforce participation),\\ 
+- "life_female" (life expectancy at birth for females),\\ 
+- "life_exp" (life expectancy at birth),\\ 
+- "risk_mat_mort" (lifetime risk of maternal death in %),\\ 
+- "mat_mort_WB" (maternal mortality ratio by the World Bank, per 100,000 live births),\\ 
+- "mat_mort_nat" (national maternal mortality ratio per 100,000 live births),\\ 
+- "infant_mort" (infant mortality rate, per 1,000 live births),\\ 
+- "f_infant_mort" (mortality rate, infant, female, per 1,000 live births),\\ 
+- "neonatal_mort" (neonatal mortality rate per 1,000 live births),\\ 
+- "f_unpaid_24h" (Proportion of females' time spent on unpaid domestic and care work, as % of 24 hour day),\\ 
+- "f_own_sex" (Women making their own informed decisions regarding sexual relations, contraceptive use and reproductive health care, % of women age 15-49),\\ 
+- "f_decide3" (Women participating in the three decisions on own health care, major household purchases, and visiting family, as % of women age 15-49),\\ 
+- "f_just_beat" (Women who believe a husband is justified in beating his wife in %),  
+- "f_samejob" (Nonpregnant and nonnursing women can do the same jobs as men; 1=yes, 0=no),\\
+- "teenage_mat" (Teenage mothers as % of women ages 15-19 who have had children or are currently pregnant),\\
+- "unmet_contracep" (Unmet need for contraception as for % of married women ages 15-49).\\ 
+
+Let's transfrom character variables to numeric and prepare the dataset for panel analysis.
+```{r}
+sapply(fem_fam_panel, class) #all variables are character
+
+#fem_p2_num <- as.data.frame(apply(fem_fam_panel, 2, as.numeric)) 
+#Use this command to convert to numeric.
+#sapply(fem_p2_num, class) 
+#Use this command to check if all data are numeric. It worked well in my case. 
+
+
+#fem_p2_NA <- na.omit(fem_p2_num) 
+#Use this command to remove all NAs, but all observations are disappearing. Let's keep the earlier dataframe and try panel analysis.  
+
+library(plm) #download panel data anaylsis tools
+#x1 + x2 + x1:x2 #this is what I get when independent variables are specified as x1*x2
+
+#This is the correct, final code:
+fem_p2_num <- fem_fam_panel
+fem_p2_num[,2:58] <- as.data.frame(apply(fem_fam_panel[,2:58], 2, as.numeric)) 
+#To convert to numeric, so that the country code remain a factor variable instead of NA when attempt to forcedly convert it to numeric.
+```
+
+HYPOTHESIS 1
+
+H1, Stage 1, pooled OLS panel models for Hypothesis 1: 
+```{r}
+#Controls: ... + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num
+
+#Pooled OLS, models 1:7, by the number of DVs
+h1_model1 <- plm(law_eq_pay ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model1)
+
+#Model 2
+h1_model2 <- plm(law_eq_hire ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model2)
+
+#Model 3
+h1_model3 <- plm(law_maternity ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model3)
+
+#Model 4, statistically significant at .1
+h1_model4 <- plm(illeg_child_marry ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model4)
+
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h1_model4, type=c("bp"))
+
+#Model 5, statistically significant at 0.01 
+h1_model5 <- plm(law_dom_viol ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model5)
+
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h1_model5, type=c("bp"))
+
+#Model 6, statistically significant at 0.01 
+h1_model6 <- plm(law_postnatal_job ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model6)
+
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h1_model6, type=c("bp"))
+
+#Model 7, statistically significant controls 
+h1_model7 <- plm(const_gen_ndisc ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h1_model7)
+
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h1_model7, type=c("bp"))
+
+#As at-hand command, use "[which(!is.na(fem_p2_num$Country.Code)), ]" to avoid NA error, but it is giving another error regardless
+```
+
+
+This test produces results similar to Stage 1. H1, Stage 2, year fixed effects 
+```{r}
+#Pooled OLS with year fixed effects
+
+#H1, model 4, fixed year. Statistically significant at .1
+h1_fixed1_m4 <- plm(illeg_child_marry ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling", effect = "time") 
+summary(h1_fixed1_m4)
+
+#H1, model 5, fixed year. Statistically significant at .01
+h1_fixed2_m5 <- plm(law_dom_viol ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling", effect = "time") 
+summary(h1_fixed2_m5)
+
+#H1, model 6, fixed year. Statistically significant at .01
+h1_fixed3_m6 <- plm(law_postnatal_job ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling", effect = "time") 
+summary(h1_fixed3_m6)
+
+#H1, model 7, fixed year. Statistically significant controls. 
+h1_fixed4_m7 <- plm(const_gen_ndisc ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling", effect = "time") 
+summary(h1_fixed4_m7)
+
+#Standard formula: 
+#model1 <- plm(y ~ x1*y1, data=fem_fam_panel, index=c("Country.Code", "year"), model="pooling", effect = "time")
+
+#model1 <- plm(y ~ x1*y1, data=fem_fam_panel, index=c("Country.Code", "year"), model="pooling", effect = "time")
+```
+
+H1, Stage 3, twoways fixed effects with a "within" model
+```{r}
+#Twoways fixed effects - both country and time fixed effects
+
+#Standard formula: 
+#model1 <- plm(y ~ x1*y1, data=fem_fam_panel, index=c("Country.Code", "year"), model="within", effect = "twoways")
+
+#H1, model 4, fixed 2-way. 
+h1_2way_m4 <- plm(illeg_child_marry ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h1_2way_m4)
+
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h1_2way_m4, test = c("lm"))
+pcdtest(h1_2way_m4, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h1_2way_m4)
+
+#H1, model 5, fixed 2-way. 
+h1_2way_m5 <- plm(law_dom_viol ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h1_2way_m5)
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h1_2way_m5, test = c("lm"))
+pcdtest(h1_2way_m5, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h1_2way_m5)
+
+#H1, model 6, fixed 2-way. 
+h1_2way_m6 <- plm(law_postnatal_job ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h1_2way_m6)
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h1_2way_m6, test = c("lm"))
+pcdtest(h1_2way_m6, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h1_2way_m6)
+
+#H1, model 7, fixed 2-way. 
+h1_2way_m7 <- plm(const_gen_ndisc ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h1_2way_m7)
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h1_2way_m7, test = c("lm"))
+pcdtest(h1_2way_m7, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h1_2way_m7)
+```
+
+H1, Stage 3 alternative, random country effects 
+```{r}
+#Random country effects
+
+#Standard formula
+#model1 <- plm(y ~ x1*y1, data=fem_fam_panel, index=c("Country.Code", "year"), model="random")
+#+factor(year)
+
+#H1, model 4, random country. 
+h1_rand4 <- plm(illeg_child_marry ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h1_rand4)
+
+#H1, model 5, random country, statistically significant at .05
+h1_rand5 <- plm(law_dom_viol ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h1_rand5)
+
+#H1, model 6, random country. 
+h1_rand6 <- plm(law_postnatal_job ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h1_rand6)
+
+#H1, model 7, random country. Statistically significant controls.  
+h1_rand7 <- plm(const_gen_ndisc ~ female + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h1_rand7)
+```
+ 
+Robustness checks: Which model, random or fixed? 
+```{r}
+#Hausman test (which tests whether the unique errors are correlated with the regressors, the null is they are not). If the p-value is significant, then you choose fixed effects (since the unique errors are correlated with the regressors).
+
+#phtest(fixed, random)
+
+#H1, m4:
+phtest(h1_2way_m4, h1_rand4)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+
+#H1, m5:
+phtest(h1_2way_m5, h1_rand5)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+
+#H1, m6:
+phtest(h1_2way_m6, h1_rand6)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+
+#H1, m7:
+phtest(h1_2way_m7, h1_rand7)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+```
+
+H1, Visualization, graphs using `stargazer` 
+```{r} 
+library(stargazer)
+
+#Standard command
+#stargazer(model1, model2, model3)
+
+illeg_child_marriage <- stargazer(h1_fixed1_m4, h1_rand4)
+
+law_dom_violence <- stargazer(h1_fixed2_m5, h1_rand5)
+
+postnatal_job <- stargazer(h1_fixed3_m6, h1_rand6)
+
+constitution_gender <- stargazer(h1_fixed4_m7, h1_rand7)
+```
+
+
+H1, Descriptive statistics
+```{r}
+#coplot(illeg_child_marry ~ year|Country.Code$RUS, type="l", data=fem_p2_num)
+#coplot(illeg_child_marry ~ year|Country.Code$RUS, type="b", data=fem_p2_num)
+
+#par(mfrow = c(1, 2), mar = c(4, 4, 2, 2))
+
+library(gplots)
+
+#Hypothesis 1
+par(mfrow = c(1, 2), mar = c(4,4,2,2))
+plotmeans(illeg_child_marry ~ year, main="Heterogen. years", data=fem_p2_num)
+plotmeans(law_dom_viol ~ year, main="Heterogen. years", data=fem_p2_num)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 2))
+plotmeans(law_postnatal_job ~ year, main="Heterogen. years", data=fem_p2_num)
+plotmeans(const_gen_ndisc ~ year, main="Heterogen. years", data=fem_p2_num)
+```
+
+
+
+HYPOTHESIS 2
+
+Hypothesis 2, Stage 1, pooled OLS panel models for Hypothesis 2: 
+```{r}
+#Controls: ... + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num
+
+#Pooled OLS, models 1:14, by the number of DVs
+
+#Model 1
+h2_model1 <- plm(f_MPs ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model1)
+
+#Model 2
+h2_model2 <- plm(VAW_12month ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model2)
+
+#Model 3, statistically significant 
+h2_model3 <- plm(risk_mat_mort ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model3)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model3, type=c("bp"))
+
+#Model 4
+h2_model4 <- plm(f_unpaid_24h ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model4)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model4, type=c("bp"))
+
+#Model 5
+h2_model5 <- plm(f_own_sex ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model5)
+
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model5, type=c("bp"))
+
+#Model 6
+h2_model6 <- plm(f_decide3 ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model6)
+
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model6, type=c("bp"))
+
+#Model 7, statistically significant 
+h2_model7 <- plm(f_just_beat ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model7)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), there are random country effects, CANNOT use simple OLS:
+plmtest(h2_model7, type=c("bp"))
+
+#Model 8
+h2_model8 <- plm(teenage_mat ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model8)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model8, type=c("bp"))
+
+#Model 9, statistically significant 
+h2_model9 <- plm(labor_fem ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model9)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model9, type=c("bp"))
+
+
+#Model 10, statistically significant controls
+h2_model10 <- plm(unemp_ILO_f ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model10)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model10, type=c("bp"))
+
+#Model 11 
+h2_model11 <- plm(school1_f~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model11)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model11, type=c("bp"))
+
+#Model 12, statistically significant controls
+h2_model12 <- plm(school2_f ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model12)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model12, type=c("bp"))
+
+#Model 13, statistically significant controls
+h2_model13 <- plm(school3_f ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model13)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model13, type=c("bp"))
+
+#Model 14, statistically significant controls 
+h2_model14 <- plm(unemp_2F ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model14)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model14, type=c("bp"))
+
+#Model 15, statistically significant  
+h2_model15 <- plm(attended_birth ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model15)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model15, type=c("bp"))
+
+#Model 16, statistically significant controls 
+h2_model16 <- plm(f_samejob ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="pooling") 
+summary(h2_model16)
+#Testing for random effects: Breusch-Pagan Lagrange multiplier (LM), all clear on random country effects, can use simple OLS:
+plmtest(h2_model16, type=c("bp"))
+```
+
+H2, Stage 2, twoways fixed effects with a "within" model
+```{r}
+#Twoways fixed effects - both country and time fixed effects
+
+#Standard formula: 
+#model1 <- plm(y ~ x1*y1, data=fem_fam_panel, index=c("Country.Code", "year"), model="within", effect = "twoways")
+
+#H3, model 3, fixed 2-way. 
+h2_2way_m3 <- plm(risk_mat_mort ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h2_2way_m3)
+
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h2_2way_m3, test = c("lm"))
+pcdtest(h2_2way_m3, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h2_2way_m3)
+
+#H2, model 9, fixed 2-way. 
+h2_2way_m9 <- plm(labor_fem  ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h2_2way_m9)
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h2_2way_m9, test = c("lm"))
+pcdtest(h2_2way_m9, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h2_2way_m9)
+
+#H2, model 15, fixed 2-way. 
+h2_2way_m15 <- plm(attended_birth ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h2_2way_m15)
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h2_2way_m15, test = c("lm"))
+pcdtest(h2_2way_m15, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h2_2way_m15)
+
+#H2, model 7, fixed 2-way. 
+h2_2way_m7 <- plm(f_just_beat ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="within", effect = "twoways") 
+summary(h2_2way_m7)
+#Robustness checks for cross-sectional dependence/contemporaneous correlation: using Breusch-Pagan LM test of independence and Pasaran CD test. No cross-sectional dependence. 
+pcdtest(h2_2way_m7, test = c("lm"))
+pcdtest(h2_2way_m7, test = c("cd"))
+#Breusch-Godfrey/Wooldridge test for serial correlation in panel models. No serial correlation. 
+pbgtest(h2_2way_m7)
+```
+
+H2, Stage 3 alternative, random country effects 
+```{r}
+#Random country effects
+
+#Standard formula
+#model1 <- plm(y ~ x1*y1, data=fem_fam_panel, index=c("Country.Code", "year"), model="random")
+#+factor(year)
+
+#H2, model 3, random country.  
+h2_rand3 <- plm(risk_mat_mort ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h2_rand3)
+
+#H2, model 9, random country.  
+h2_rand9 <- plm(labor_fem  ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h2_rand9)
+
+#H2, model 15, random country.  
+h2_rand15 <- plm(attended_birth ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h2_rand15)
+
+#H2, model 7, random country.  
+h2_rand7 <- plm(f_just_beat ~ female*post_com + log(gdp_pc) + agric_share + urban_pop + debt_service + edu_gdp, data=fem_p2_num, index=c("Country.Code", "year"), model="random") 
+summary(h2_rand7)
+```
+ 
+Robustness checks: Which model, random or fixed? 
+```{r}
+#Hausman test (which tests whether the unique errors are correlated with the regressors, the null is they are not). If the p-value is significant, then you choose fixed effects (since the unique errors are correlated with the regressors).
+
+#phtest(fixed, random)
+
+#H2, m3:
+phtest(h2_2way_m3, h2_rand3)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+
+#H2, m9:
+phtest(h2_2way_m9, h2_rand9)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+
+#H2, m15:
+phtest(h2_2way_m15, h2_rand15)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+
+#H2, m7 random and fixed, both used:
+phtest(h2_2way_m7, h2_rand7)
+#p-value is not significant, OK not to choose fixed effects (since the unique errors are NOT correlated with the regressors).
+```
+
+Descriptive statistics for Hypothesis 2
+```{r}
+#Hypothesis 2
+par(mfrow = c(1, 2), mar = c(4,4,2,2))
+plotmeans(risk_mat_mort ~ year, main="Heterogen. years", data=fem_p2_num)
+plotmeans(labor_fem ~ year, main="Heterogen. years", data=fem_p2_num)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 2))
+plotmeans(attended_birth ~ year, main="Heterogen. years", data=fem_p2_num)
+plotmeans(f_just_beat ~ year, main="Heterogen. years", data=fem_p2_num)
+```
+
+H2, Visualization, graphs using `stargazer` 
+```{r} 
+library(stargazer)
+
+#Standard command
+#stargazer(model1, model2, model3)
+
+risk_maternal_death <- stargazer(h2_model3, h2_2way_m3)
+
+laborforce_f <- stargazer(h2_model9, h2_2way_m9)
+
+birth_attended <- stargazer(h2_model15, h2_2way_m15)
+
+justify_beating <- stargazer(h2_rand7, h2_2way_m7)
+```
